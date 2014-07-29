@@ -83,7 +83,7 @@ void RoboclawController::handleDataMsg(amber::DriverHdr *driverHdr, amber::Drive
         }*/
 
         if (driverMsg->GetExtension(location_proto::get_location))
-	 {
+        {
             handleCurrentSpeedRequest(clientId, driverMsg->synnum());
         }
 
