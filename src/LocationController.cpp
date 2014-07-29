@@ -24,93 +24,60 @@ LoggerPtr LocationController::_logger(Logger::getLogger("Roboclaw.Controller"));
 
 LocationController::LocationController(int pipeInFd, int pipeOutFd, const char *confFilename)
 {
-
    // parseConfigurationFile(confFilename);
-   // _roboclawDisabled = false;
- //   _overheated = false;
-
-    //_roboclawDriver = new RoboclawDriver(_configuration);
     
 	_amberPipes = new AmberPipes(this, pipeInFd, pipeOutFd);
 
-//    _roboclawDriver->initializeDriver();
-
- /*   if (_configuration->battery_monitor_interval > 0) {
+ /*   if (_configuration->battery_monitor_interval > 0)
+  * {
         _batteryMonitorThread = new boost::thread(boost::bind(&LocationController::batteryMonitor, this));
     }
-
-    if (_configuration->error_monitor_interval > 0) {
-        _errorMonitorThread = new boost::thread(boost::bind(&LocationController::errorMonitor, this));
-    }
-
-    if (_configuration->temperature_monitor_interval > 0) {
-        _temperatureMonitorThread = new boost::thread(boost::bind(&LocationController::temperatureMonitor, this));
-    }
-
-    _roboclawDriver->setLed1(true);
-    _roboclawDriver->setLed2(false);
 */
 }
 
 LocationController::~LocationController() {
     LOG4CXX_INFO(_logger, "Stopping controller.");
 
-   // _roboclawDriver->setLed1(false);
-
-   // delete _roboclawDriver;
     delete _amberPipes;
 }
 
-void LocationController::handleDataMsg(amber::DriverHdr *driverHdr, amber::DriverMsg *driverMsg) //to jest to
+void LocationController::handleDataMsg(amber::DriverHdr *driverHdr, amber::DriverMsg *driverMsg)
 {
     if (_logger->isDebugEnabled()) {
         LOG4CXX_DEBUG(_logger, "Message came");
     }
 
-    //_roboclawDriver->setLed1(true);
-
-    // TODO: hack for now
     int clientId = driverHdr->clientids_size() > 0 ? driverHdr->clientids(0) : 0;
 
     // DataRequest
     if (driverMsg->HasExtension(location_proto::get_location)) 
 	{
-
-        /*if (!driverMsg->has_synnum()) {
-            LOG4CXX_WARN(_logger, "Got CurrentSpeedRequest, but syn num not set. Ignoring.");
+        if (!driverMsg->has_synnum()) {
+            LOG4CXX_WARN(_logger, "Got CurrentLocationRequest, but syn num not set. Ignoring.");
             return;
-        }*/
+        }
 
         if (driverMsg->GetExtension(location_proto::get_location))
         {
-            handleCurrentSpeedRequest(clientId, driverMsg->synnum());
+            handleCurrentLocationRequest(clientId, driverMsg->synnum());
         }
-
-    } 
-	
-	//else if (driverMsg->HasExtension(roboclaw_proto::motorsCommand)) {
-    //    handleMotorsEncoderCommand(driverMsg->MutableExtension(roboclaw_proto::motorsCommand));
-   // }
-
-   // _roboclawDriver->setLed1(false);
+    }
 }
 
 void LocationController::handleClientDiedMsg(int clientID) {
     LOG4CXX_INFO(_logger, "Client " << clientID << " died");
 
-   // _roboclawDriver->stopMotors();
 }
 
 void LocationController::operator()() {
     _amberPipes->operator ()();
 }
 
-amber::DriverMsg *LocationController::buildCurrentSpeedMsg()  //zrobic za moment
+amber::DriverMsg *LocationController::buildCurrentLocationMsg()
 {
-LOG4CXX_INFO(_logger, "build current speed msg -> jestem w tu ");
+LOG4CXX_INFO(_logger, "build current location msg");
  
-
- amber::DriverMsg *message = new amber::DriverMsg();
+ 	amber::DriverMsg *message = new amber::DriverMsg();
     message->set_type(amber::DriverMsg_MsgType_DATA);
 
     location_proto::Location *currentLocation = message->MutableExtension(location_proto::currentLocation);
@@ -121,283 +88,33 @@ LOG4CXX_INFO(_logger, "build current speed msg -> jestem w tu ");
     return message;
 }
 
-void LocationController::sendCurrentSpeedMsg(int receiver, int ackNum) //zrobic pozniej
+void LocationController::sendCurrentLocationMsg(int receiver, int ackNum)
 {
     if (_logger->isDebugEnabled()) {
-        LOG4CXX_DEBUG(_logger, "Sending currentSpeedRequest message");
+        LOG4CXX_DEBUG(_logger, "Sending currentLocationRequest message");
     }
 
-    amber::DriverMsg *currentSpeedMsg = buildCurrentSpeedMsg();
-    currentSpeedMsg->set_acknum(ackNum);
+    amber::DriverMsg *currentLocationMsg = buildCurrentLocationMsg();
+    currentLocationMsg->set_acknum(ackNum);
     amber::DriverHdr *header = new amber::DriverHdr();
     header->add_clientids(receiver);
 
-    _amberPipes->writeMsgToPipe(header, currentSpeedMsg);
+    _amberPipes->writeMsgToPipe(header, currentLocationMsg);
 
-    delete currentSpeedMsg;
+    delete currentLocationMsg;
     delete header;
 }
 
-void LocationController::handleCurrentSpeedRequest(int sender, int synNum) //ok
+void LocationController::handleCurrentLocationRequest(int sender, int synNum)
 {
     if (_logger->isDebugEnabled()) {
-        LOG4CXX_DEBUG(_logger, "Handling currentSpeedRequest message");
+        LOG4CXX_DEBUG(_logger, "Handling currentLocationRequest message");
     }
 
-    sendCurrentSpeedMsg(sender, synNum);
+    sendCurrentLocationMsg(sender, synNum);
 }
 
-/*void LocationController::handleMotorsEncoderCommand(roboclaw_proto::MotorsSpeed *motorsCommand)
-{
-    if (_logger->isDebugEnabled()) {
-        LOG4CXX_DEBUG(_logger, "Handling motorsEncoderCommand message");
-    }
-
-    MotorsSpeedStruct mc;
-
-    mc.frontLeftSpeed = toQpps(motorsCommand->frontleftspeed());
-    mc.frontRightSpeed = toQpps(motorsCommand->frontrightspeed());
-    mc.rearLeftSpeed = toQpps(motorsCommand->rearleftspeed());
-    mc.rearRightSpeed = toQpps(motorsCommand->rearrightspeed());
-
-    if (!_roboclawDisabled) {
-
-        try {
-            _roboclawDriver->sendMotorsEncoderCommand(&mc);
-        } catch (RoboclawSerialException& e) {
-            // do nothing
-        }
-    }
-}
-
-int LocationController::toQpps(int in) {
-    double rps = in / (double) (_configuration->wheel_radius * M_PI * 2);
-    int out = (int) (rps * _configuration->pulses_per_revolution);
-
-    if (_logger->isDebugEnabled()) {
-        LOG4CXX_DEBUG(_logger, "toOpps: " << in << ", " << out);
-    }
-
-    return out;
-}
-
-int LocationController::toMmps(int in) {
-    int out = (int) (in * (int) _configuration->wheel_radius * M_PI * 2 / (double) _configuration->pulses_per_revolution);
-
-    if (_logger->isDebugEnabled()) {
-        LOG4CXX_DEBUG(_logger, "toMmps: " << in << ", " << out);
-    }
-
-    return out;
-}
-
-void LocationController::batteryMonitor() {
-    LOG4CXX_INFO(_logger, "Battery monitor thread started, interval: " << _configuration->battery_monitor_interval << "ms");
-
-    __u16 voltage;
-
-    while (1) {
-        boost::this_thread::sleep(boost::posix_time::milliseconds(_configuration->battery_monitor_interval));
-
-        if (!_roboclawDisabled) {
-
-            try {
-                _roboclawDriver->readMainBatteryVoltage(&voltage);
-                LOG4CXX_INFO(_logger, "Main battery voltage level: " << voltage / 10.0 << "V");
-            } catch (RoboclawSerialException& e) {
-                // do nothing
-            }
-        }
-    }
-}
-
-void LocationController::errorMonitor() {
-    LOG4CXX_INFO(_logger, "Hardware error monitor started, interval: " << _configuration->error_monitor_interval << "ms");
-
-    __u8 frontErrorStatus, rearErrorStatus, frontErrorStatusTmp, rearErrorStatusTmp;
-    bool same_errors;
-
-    while (1) {
-        boost::this_thread::sleep(boost::posix_time::milliseconds(_configuration->error_monitor_interval));
-
-        try {
-            _roboclawDriver->readErrorStatus(&frontErrorStatus, &rearErrorStatus);
-
-            if (frontErrorStatus != RC_ERROR_NORMAL || rearErrorStatus != RC_ERROR_NORMAL) {
-
-                frontErrorStatusTmp = frontErrorStatus;
-                rearErrorStatusTmp = rearErrorStatus;
-
-                // check again in case of read errors
-                same_errors = true;
-
-                for (unsigned int i = 0; i < _configuration->critical_read_repeats; i++) {
-                    _roboclawDriver->readErrorStatus(&frontErrorStatus, &rearErrorStatus);
-
-                    if (frontErrorStatus != frontErrorStatusTmp || rearErrorStatus != rearErrorStatusTmp) {
-                        same_errors = false;
-                        break;
-                    }
-                }
-
-                // if errors still the same
-                if (same_errors) {
-                    if (frontErrorStatus != RC_ERROR_NORMAL) {
-                        LOG4CXX_WARN(_logger, "Front Roboclaw error: " << getErorDescription(frontErrorStatus));
-                    }
-
-                    if (rearErrorStatus != RC_ERROR_NORMAL) {
-                        LOG4CXX_WARN(_logger, "Rear Roboclaw error: " << getErorDescription(rearErrorStatus));
-                    }
-
-                    if (frontErrorStatus == RC_ERROR_M1_OVERCURRENT || frontErrorStatus == RC_ERROR_M2_OVERCURRENT ||
-                            rearErrorStatus == RC_ERROR_M1_OVERCURRENT || rearErrorStatus == RC_ERROR_M2_OVERCURRENT) {
-
-                        resetAndWait();
-                    } else if (frontErrorStatus == RC_ERROR_MAIN_BATTERY_LOW || rearErrorStatus == RC_ERROR_MAIN_BATTERY_LOW) {
-                        _roboclawDriver->setLed2(true);
-
-                        _roboclawDisabled = true;
-                    }
-                }
-            }
-
-
-
-        } catch (RoboclawSerialException& e) {
-            // do nothing
-        }
-    }
-
-}
-
-void LocationController::temperatureMonitor() {
-    LOG4CXX_INFO(_logger, "Temperature monitor thread started, interval: " << _configuration->temperature_monitor_interval << "ms");
-
-    __u16 frontTemperature, rearTemperature;
-
-    while (1) {
-        boost::this_thread::sleep(boost::posix_time::milliseconds(_configuration->temperature_monitor_interval));
-
-        if (!_roboclawDisabled) {
-            _roboclawDriver->readTemperature(&frontTemperature, &rearTemperature);
-
-            LOG4CXX_INFO(_logger, "Front temperature: " << frontTemperature / 10.0 << "C, " <<
-                    "rear temperature: " << rearTemperature / 10.0 << "C");
-
-            if (_overheated) {
-                // if temperature droped down below drop level
-                if (frontTemperature < _configuration->temperature_drop && rearTemperature < _configuration->temperature_drop) {
-                    _overheated = false;
-
-                    // check again in case of read errors
-                    for (unsigned int i = 0; i < _configuration->critical_read_repeats; i++) {
-                        _roboclawDriver->readTemperature(&frontTemperature, &rearTemperature);
-
-                        if (frontTemperature > _configuration->temperature_drop || rearTemperature > _configuration->temperature_drop) {
-                            _overheated = true;
-                            break;
-                        }
-                    }
-
-                    // if still cool and ok
-                    if (!_overheated) {
-                        LOG4CXX_INFO(_logger, "Roboclaw cooled down, reseting");
-                        resetAndWait();
-                    }
-                }
-
-            } else {
-                // if temperature above critical
-                if (frontTemperature > _configuration->temperature_critical || rearTemperature > _configuration->temperature_critical) {
-
-                    _overheated = true;
-
-                    // check again in case of read errors
-                    for (unsigned int i = 0; i < _configuration->critical_read_repeats; i++) {
-                        _roboclawDriver->readTemperature(&frontTemperature, &rearTemperature);
-
-                        if (frontTemperature < _configuration->temperature_critical && rearTemperature < _configuration->temperature_critical) {
-                            _overheated = false;
-                            break;
-                        }
-                    }
-
-                    // if still _overheated
-                    if (_overheated) {
-                        _roboclawDriver->stopMotors();
-
-                        LOG4CXX_WARN(_logger, "Roboclaw _overheated, waiting for cool down to " << _configuration->temperature_drop / 10.0 << "C");
-                    }
-                }
-            }
-
-        }
-    }
-
-}
-
-void LocationController::resetAndWait() {
-    LOG4CXX_INFO(_logger, "Reseting Roboclaws and waiting " << _configuration->reset_delay << "ms");
-
-    _roboclawDisabled = true;
-
-    _roboclawDriver->reset();
-    boost::this_thread::sleep(boost::posix_time::milliseconds(_configuration->reset_delay));
-
-    _roboclawDriver->sendEncoderSettings();
-
-    _roboclawDisabled = false;
-}
-
-string LocationController::getErorDescription(__u8 errorStatus) {
-
-    string description;
-
-    switch (errorStatus) {
-        case RC_ERROR_NORMAL:
-            description = "no error";
-            break;
-
-        case RC_ERROR_M1_OVERCURRENT:
-            description = "m1 overcurrent";
-            break;
-
-        case RC_ERROR_M2_OVERCURRENT:
-            description = "m2 overcurrent";
-            break;
-
-        case RC_ERROR_ESTOP:
-            description = "emergency stop";
-            break;
-
-        case RC_ERROR_TEMPERATURE:
-            description = "temperature high";
-            break;
-
-        case RC_ERROR_MAIN_BATTERY_HIGH:
-            description = " battery high";
-            break;
-
-        case RC_ERROR_MAIN_BATTERY_LOW:
-            description = "main battery low";
-            break;
-
-        case RC_ERROR_LOGIC_BATTERY_HIGH:
-            description = "logic battery high";
-            break;
-
-        case RC_ERROR_LOGIC_BATTERY_LOW:
-            description = "logic battery low";
-            break;
-
-        default:
-            description = "";
-    }
-
-    return description;
-}
-
+/*
 void LocationController::parseConfigurationFile(const char *filename) {
     LOG4CXX_INFO(_logger, "Parsing configuration file: " << filename);
 
@@ -469,6 +186,4 @@ int main(int argc, char *argv[]) {
 
     LocationController controller(0, 1, confFile);
     controller();
-
-//printf("zakonczylem program");
 }

@@ -1,6 +1,5 @@
 /*
- * Location.h
- *
+ * LocationController.h
  *
  *  Created on: 29-07-2014
  *      Author: szsz
@@ -42,9 +41,9 @@ private:
 
 	static log4cxx::LoggerPtr _logger;
 
-	amber::DriverMsg *buildCurrentSpeedMsg();
-	void sendCurrentSpeedMsg(int receiver, int ackNum);
-	void handleCurrentSpeedRequest(int sender, int synNum);
+	amber::DriverMsg *buildCurrentLocationMsg();
+	void sendCurrentLocationMsg(int receiver, int ackNum);
+	void handleCurrentLocationRequest(int sender, int synNum);
 //	void parseConfigurationFile(const char *filename);
 
 };
