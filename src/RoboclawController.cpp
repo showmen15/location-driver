@@ -23,7 +23,8 @@ using namespace amber;
 
 LoggerPtr RoboclawController::_logger(Logger::getLogger("Roboclaw.Controller"));
 
-RoboclawController::RoboclawController(int pipeInFd, int pipeOutFd, const char *confFilename) {
+RoboclawController::RoboclawController(int pipeInFd, int pipeOutFd, const char *confFilename)
+{
 
    // parseConfigurationFile(confFilename);
    // _roboclawDisabled = false;
@@ -63,7 +64,6 @@ RoboclawController::~RoboclawController() {
 
 void RoboclawController::handleDataMsg(amber::DriverHdr *driverHdr, amber::DriverMsg *driverMsg) //to jest to
 {
-
     if (_logger->isDebugEnabled()) {
         LOG4CXX_DEBUG(_logger, "Message came");
     }
@@ -112,39 +112,13 @@ LOG4CXX_INFO(_logger, "build current speed msg -> jestem w tu ");
  
 
  amber::DriverMsg *message = new amber::DriverMsg();
-    /*message->set_type(amber::DriverMsg_MsgType_DATA);
+    message->set_type(amber::DriverMsg_MsgType_DATA);
 
-    location_proto::MotorsSpeed *currentSpeed = message->MutableExtension(roboclaw_proto::currentSpeed);
+    location_proto::Location *currentLocation = message->MutableExtension(location_proto::currentLocation);
 
-    MotorsSpeedStruct mc;
-    bool speedReadSuccess = false;
+    currentLocation->set_x(12345);
+    currentLocation->set_y(65432);
 
-    if (!_roboclawDisabled) {
-
-        // repeat reads in case of read errors
-        for (unsigned int i = 0; i < _configuration->critical_read_repeats; i++) {
-            try {
-                _roboclawDriver->readCurrentSpeed(&mc);
-                speedReadSuccess = true;
-                break;
-            } catch (RoboclawSerialException& e) {
-                // do nothing
-            }
-        }
-    }
-
-    if (speedReadSuccess) {
-        currentSpeed->set_frontleftspeed(toMmps(mc.frontLeftSpeed));
-        currentSpeed->set_frontrightspeed(toMmps(mc.frontRightSpeed));
-        currentSpeed->set_rearleftspeed(toMmps(mc.rearLeftSpeed));
-        currentSpeed->set_rearrightspeed(toMmps(mc.rearRightSpeed));
-    } else {
-        currentSpeed->set_frontleftspeed(0);
-        currentSpeed->set_frontrightspeed(0);
-        currentSpeed->set_rearleftspeed(0);
-        currentSpeed->set_rearrightspeed(0);
-    }
-*/
     return message;
 }
 
