@@ -8,7 +8,6 @@
 #include <log4cxx/propertyconfigurator.h>
 
 #include "RoboclawController.h"
-#include "RoboclawCommon.h"
 
 #include <boost/program_options.hpp>
 #include <string>
