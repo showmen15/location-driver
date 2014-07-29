@@ -45,7 +45,6 @@ private:
 	amber::DriverMsg *buildCurrentSpeedMsg();
 	void sendCurrentSpeedMsg(int receiver, int ackNum);
 	void handleCurrentSpeedRequest(int sender, int synNum);
-	void handleMotorsEncoderCommand(amber::roboclaw_proto::MotorsSpeed *motorsCommand);
 //	void parseConfigurationFile(const char *filename);
 
 };
