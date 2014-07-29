@@ -1,13 +1,13 @@
 /*
- * RoboclawController.cpp
+ * LocationController.cpp
  *
- *  Created on: 30-11-2012
- *      Author: michal
+ *  Created on: 29-07-2014
+ *      Author: szsz
  */
 
 #include <log4cxx/propertyconfigurator.h>
 
-#include "RoboclawController.h"
+#include "LocationController.h"
 
 #include <boost/program_options.hpp>
 #include <string>
@@ -20,9 +20,9 @@ using namespace boost::program_options;
 using namespace log4cxx;
 using namespace amber;
 
-LoggerPtr RoboclawController::_logger(Logger::getLogger("Roboclaw.Controller"));
+LoggerPtr LocationController::_logger(Logger::getLogger("Roboclaw.Controller"));
 
-RoboclawController::RoboclawController(int pipeInFd, int pipeOutFd, const char *confFilename)
+LocationController::LocationController(int pipeInFd, int pipeOutFd, const char *confFilename)
 {
 
    // parseConfigurationFile(confFilename);
@@ -36,15 +36,15 @@ RoboclawController::RoboclawController(int pipeInFd, int pipeOutFd, const char *
 //    _roboclawDriver->initializeDriver();
 
  /*   if (_configuration->battery_monitor_interval > 0) {
-        _batteryMonitorThread = new boost::thread(boost::bind(&RoboclawController::batteryMonitor, this));
+        _batteryMonitorThread = new boost::thread(boost::bind(&LocationController::batteryMonitor, this));
     }
 
     if (_configuration->error_monitor_interval > 0) {
-        _errorMonitorThread = new boost::thread(boost::bind(&RoboclawController::errorMonitor, this));
+        _errorMonitorThread = new boost::thread(boost::bind(&LocationController::errorMonitor, this));
     }
 
     if (_configuration->temperature_monitor_interval > 0) {
-        _temperatureMonitorThread = new boost::thread(boost::bind(&RoboclawController::temperatureMonitor, this));
+        _temperatureMonitorThread = new boost::thread(boost::bind(&LocationController::temperatureMonitor, this));
     }
 
     _roboclawDriver->setLed1(true);
@@ -52,7 +52,7 @@ RoboclawController::RoboclawController(int pipeInFd, int pipeOutFd, const char *
 */
 }
 
-RoboclawController::~RoboclawController() {
+LocationController::~LocationController() {
     LOG4CXX_INFO(_logger, "Stopping controller.");
 
    // _roboclawDriver->setLed1(false);
@@ -61,7 +61,7 @@ RoboclawController::~RoboclawController() {
     delete _amberPipes;
 }
 
-void RoboclawController::handleDataMsg(amber::DriverHdr *driverHdr, amber::DriverMsg *driverMsg) //to jest to
+void LocationController::handleDataMsg(amber::DriverHdr *driverHdr, amber::DriverMsg *driverMsg) //to jest to
 {
     if (_logger->isDebugEnabled()) {
         LOG4CXX_DEBUG(_logger, "Message came");
@@ -95,17 +95,17 @@ void RoboclawController::handleDataMsg(amber::DriverHdr *driverHdr, amber::Drive
    // _roboclawDriver->setLed1(false);
 }
 
-void RoboclawController::handleClientDiedMsg(int clientID) {
+void LocationController::handleClientDiedMsg(int clientID) {
     LOG4CXX_INFO(_logger, "Client " << clientID << " died");
 
    // _roboclawDriver->stopMotors();
 }
 
-void RoboclawController::operator()() {
+void LocationController::operator()() {
     _amberPipes->operator ()();
 }
 
-amber::DriverMsg *RoboclawController::buildCurrentSpeedMsg()  //zrobic za moment
+amber::DriverMsg *LocationController::buildCurrentSpeedMsg()  //zrobic za moment
 {
 LOG4CXX_INFO(_logger, "build current speed msg -> jestem w tu ");
  
@@ -121,7 +121,7 @@ LOG4CXX_INFO(_logger, "build current speed msg -> jestem w tu ");
     return message;
 }
 
-void RoboclawController::sendCurrentSpeedMsg(int receiver, int ackNum) //zrobic pozniej
+void LocationController::sendCurrentSpeedMsg(int receiver, int ackNum) //zrobic pozniej
 {
     if (_logger->isDebugEnabled()) {
         LOG4CXX_DEBUG(_logger, "Sending currentSpeedRequest message");
@@ -138,7 +138,7 @@ void RoboclawController::sendCurrentSpeedMsg(int receiver, int ackNum) //zrobic 
     delete header;
 }
 
-void RoboclawController::handleCurrentSpeedRequest(int sender, int synNum) //ok
+void LocationController::handleCurrentSpeedRequest(int sender, int synNum) //ok
 {
     if (_logger->isDebugEnabled()) {
         LOG4CXX_DEBUG(_logger, "Handling currentSpeedRequest message");
@@ -147,7 +147,7 @@ void RoboclawController::handleCurrentSpeedRequest(int sender, int synNum) //ok
     sendCurrentSpeedMsg(sender, synNum);
 }
 
-/*void RoboclawController::handleMotorsEncoderCommand(roboclaw_proto::MotorsSpeed *motorsCommand) 
+/*void LocationController::handleMotorsEncoderCommand(roboclaw_proto::MotorsSpeed *motorsCommand)
 {
     if (_logger->isDebugEnabled()) {
         LOG4CXX_DEBUG(_logger, "Handling motorsEncoderCommand message");
@@ -170,7 +170,7 @@ void RoboclawController::handleCurrentSpeedRequest(int sender, int synNum) //ok
     }
 }
 
-int RoboclawController::toQpps(int in) {
+int LocationController::toQpps(int in) {
     double rps = in / (double) (_configuration->wheel_radius * M_PI * 2);
     int out = (int) (rps * _configuration->pulses_per_revolution);
 
@@ -181,7 +181,7 @@ int RoboclawController::toQpps(int in) {
     return out;
 }
 
-int RoboclawController::toMmps(int in) {
+int LocationController::toMmps(int in) {
     int out = (int) (in * (int) _configuration->wheel_radius * M_PI * 2 / (double) _configuration->pulses_per_revolution);
 
     if (_logger->isDebugEnabled()) {
@@ -191,7 +191,7 @@ int RoboclawController::toMmps(int in) {
     return out;
 }
 
-void RoboclawController::batteryMonitor() {
+void LocationController::batteryMonitor() {
     LOG4CXX_INFO(_logger, "Battery monitor thread started, interval: " << _configuration->battery_monitor_interval << "ms");
 
     __u16 voltage;
@@ -211,7 +211,7 @@ void RoboclawController::batteryMonitor() {
     }
 }
 
-void RoboclawController::errorMonitor() {
+void LocationController::errorMonitor() {
     LOG4CXX_INFO(_logger, "Hardware error monitor started, interval: " << _configuration->error_monitor_interval << "ms");
 
     __u8 frontErrorStatus, rearErrorStatus, frontErrorStatusTmp, rearErrorStatusTmp;
@@ -271,7 +271,7 @@ void RoboclawController::errorMonitor() {
 
 }
 
-void RoboclawController::temperatureMonitor() {
+void LocationController::temperatureMonitor() {
     LOG4CXX_INFO(_logger, "Temperature monitor thread started, interval: " << _configuration->temperature_monitor_interval << "ms");
 
     __u16 frontTemperature, rearTemperature;
@@ -337,7 +337,7 @@ void RoboclawController::temperatureMonitor() {
 
 }
 
-void RoboclawController::resetAndWait() {
+void LocationController::resetAndWait() {
     LOG4CXX_INFO(_logger, "Reseting Roboclaws and waiting " << _configuration->reset_delay << "ms");
 
     _roboclawDisabled = true;
@@ -350,7 +350,7 @@ void RoboclawController::resetAndWait() {
     _roboclawDisabled = false;
 }
 
-string RoboclawController::getErorDescription(__u8 errorStatus) {
+string LocationController::getErorDescription(__u8 errorStatus) {
 
     string description;
 
@@ -398,7 +398,7 @@ string RoboclawController::getErorDescription(__u8 errorStatus) {
     return description;
 }
 
-void RoboclawController::parseConfigurationFile(const char *filename) {
+void LocationController::parseConfigurationFile(const char *filename) {
     LOG4CXX_INFO(_logger, "Parsing configuration file: " << filename);
 
     _configuration = new RoboclawConfiguration();
@@ -467,7 +467,7 @@ int main(int argc, char *argv[]) {
 
     LOG4CXX_INFO(logger, "jestem w main 3 ");
 
-    RoboclawController controller(0, 1, confFile);
+    LocationController controller(0, 1, confFile);
     controller();
 
 //printf("zakonczylem program");

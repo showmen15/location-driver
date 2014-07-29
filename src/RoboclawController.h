@@ -6,8 +6,8 @@
  *      Author: szsz
  */
 
-#ifndef ROBOCLAWCONTROLLER_H_
-#define ROBOCLAWCONTROLLER_H_
+#ifndef LocationController_H_
+#define LocationController_H_
 
 #include <log4cxx/logger.h>
 #include <boost/thread.hpp>
@@ -20,10 +20,10 @@
 #include "location.pb.h"
 
 
-class RoboclawController: public MessageHandler {
+class LocationController: public MessageHandler {
 public:
-	RoboclawController(int pipeInFd, int pipeOutFd, const char *confFilename);
-	virtual ~RoboclawController();
+	LocationController(int pipeInFd, int pipeOutFd, const char *confFilename);
+	virtual ~LocationController();
 
 	void handleDataMsg(amber::DriverHdr *driverHdr, amber::DriverMsg *driverMsg);
 	void handleClientDiedMsg(int clientID);
@@ -50,4 +50,4 @@ private:
 };
 
 
-#endif /* ROBOCLAWCONTROLLER_H_ */
+#endif /* LocationController_H_ */
