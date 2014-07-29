@@ -1,9 +1,9 @@
 /*
- * StargazerController.h
+ * Location.h
  *
  *
- *  Created on: 30-11-2012
- *      Author: michal
+ *  Created on: 29-07-2014
+ *      Author: szsz
  */
 
 #ifndef ROBOCLAWCONTROLLER_H_
@@ -16,10 +16,7 @@
 
 #include "AmberScheduler.h"
 #include "AmberPipes.h"
-#include "RoboclawDriver.h"
 #include "drivermsg.pb.h"
-#include "roboclaw.pb.h"
-#include "RoboclawLib.h"
 #include "location.pb.h"
 
 
@@ -33,16 +30,15 @@ public:
 	void operator()();
 
 private:
-	//RoboclawDriver *_roboclawDriver;
 	AmberPipes *_amberPipes;
 
 	bool _roboclawDisabled;
 	bool _overheated;
 
 	//RoboclawConfiguration *_configuration;
-//	boost::thread *_batteryMonitorThread;
+	//	boost::thread *_batteryMonitorThread;
 	//boost::thread *_errorMonitorThread;
-//	boost::thread *_temperatureMonitorThread;
+	//	boost::thread *_temperatureMonitorThread;
 
 	static log4cxx::LoggerPtr _logger;
 
@@ -51,15 +47,6 @@ private:
 	void handleCurrentSpeedRequest(int sender, int synNum);
 	void handleMotorsEncoderCommand(amber::roboclaw_proto::MotorsSpeed *motorsCommand);
 //	void parseConfigurationFile(const char *filename);
-//	void resetAndWait();
-
-//	void batteryMonitor();
-	//void errorMonitor();
-	//void temperatureMonitor();
-
-	//std::string getErorDescription(__u8 errorStatus);
-	//int toQpps(int in);
-	//int toMmps(int in);
 
 };
 
